@@ -27,6 +27,7 @@ class Env {
             Types.LainSymbol symbol = (Types.LainSymbol) binds.get(i);
             if (symbol.getValue().equals("&")) {
                 set((Types.LainSymbol) binds.get(i + 1), exprs.sub(i));
+                return;
             } else {
                 set(symbol, exprs.get(i));
             }

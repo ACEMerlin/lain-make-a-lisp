@@ -114,9 +114,10 @@ public class Lain {
         return EVAL(READ(str), env);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Types.LainException {
         String prompt = "user> ";
         Env env = new Env(Core.ns);
+        RE(env, "(def! not (lambda (a) (if a false true)))");
         while (true) {
             String line;
             try {
