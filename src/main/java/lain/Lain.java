@@ -121,13 +121,13 @@ public class Lain {
         while (true) {
             String line;
             try {
-                line = ReadLine.readLine(prompt);
+                line = ReadLine.jnaReadLine(prompt);
                 if (line == null || line.equals(""))
                     continue;
                 Types.LainObj lainObj = RE(env, line);
                 if (lainObj != null)
                     System.out.println(PRINT(lainObj));
-            } catch (IOException e) {
+            } catch (IOException | ReadLine.EOFException e) {
                 break;
             } catch (Types.LainException e) {
                 e.printStackTrace();
