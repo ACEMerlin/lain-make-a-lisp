@@ -44,12 +44,12 @@ class Core {
                 if (args.getValue().stream()
                         .allMatch(p -> Types.LainInteger.class.isAssignableFrom(p.getClass()))) {
                     Types.LainInteger first = ((Types.LainInteger) args.get(0));
-                    return ((Types.LainList) args.sub(1)).getValue().stream()
+                    return (args.sub(1)).getValue().stream()
                             .map(e -> (Types.LainInteger) e)
                             .reduce(first, Types.LainInteger::minus);
                 } else {
                     double first = ((Types.LainDecimal) args.get(0)).doubleValue();
-                    return new Types.LainDecimal(first - ((Types.LainList) args.sub(1)).getValue().stream()
+                    return new Types.LainDecimal(first - (args.sub(1)).getValue().stream()
                             .map(e -> ((Types.LainNumber) e).doubleValue())
                             .reduce(0.0, Double::sum));
                 }
@@ -90,7 +90,7 @@ class Core {
                         .allMatch(p -> Types.LainInteger.class.isAssignableFrom(p.getClass()))) {
                     Types.LainInteger first = ((Types.LainInteger) args.get(0));
                     int ret = first.intValue();
-                    List<Types.LainObj> list = ((Types.LainList) args.sub(1)).getValue();
+                    List<Types.LainObj> list = args.sub(1).getValue();
                     for (Types.LainObj aList : list) {
                         ret = ret / ((Types.LainInteger) aList).intValue();
                     }
@@ -98,7 +98,7 @@ class Core {
                 } else {
                     Types.LainNumber first = ((Types.LainNumber) args.get(0));
                     double ret = first.doubleValue();
-                    List<Types.LainObj> list = ((Types.LainList) args.sub(1)).getValue();
+                    List<Types.LainObj> list = (args.sub(1)).getValue();
                     for (Types.LainObj aList : list) {
                         ret = ret / ((Types.LainNumber) aList).doubleValue();
                     }
@@ -113,7 +113,7 @@ class Core {
         public Types.LainObj apply(Types.LainList args) throws Types.LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = ((Types.LainList) args.sub(i + 1));
+                Types.LainList rest = (args.sub(i + 1));
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
                     if (Types.equal(args.get(i), rest.get(j)).equals(Types.False)) {
@@ -130,7 +130,7 @@ class Core {
         public Types.LainObj apply(Types.LainList args) throws Types.LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = ((Types.LainList) args.sub(i + 1));
+                Types.LainList rest = args.sub(i + 1);
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
                     if (Types.LainNumber.lt(
@@ -149,7 +149,7 @@ class Core {
         public Types.LainObj apply(Types.LainList args) throws Types.LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = ((Types.LainList) args.sub(i + 1));
+                Types.LainList rest = args.sub(i + 1);
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
                     if (Types.LainNumber.lte(
@@ -168,7 +168,7 @@ class Core {
         public Types.LainObj apply(Types.LainList args) throws Types.LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = ((Types.LainList) args.sub(i + 1));
+                Types.LainList rest = args.sub(i + 1);
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
                     if (Types.LainNumber.gt(
@@ -187,7 +187,7 @@ class Core {
         public Types.LainObj apply(Types.LainList args) throws Types.LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = ((Types.LainList) args.sub(i + 1));
+                Types.LainList rest = args.sub(i + 1);
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
                     if (Types.LainNumber.gte(

@@ -350,7 +350,7 @@ public class Types {
             }
         }
 
-        public LainObj rest() {
+        public LainList rest() {
             if (size() > 0) {
                 return new LainList(value.subList(1, value.size()));
             } else {
@@ -358,11 +358,11 @@ public class Types {
             }
         }
 
-        public LainObj sub(int start, int end) {
+        public LainList sub(int start, int end) {
             return new LainList(value.subList(start, end));
         }
 
-        public LainObj sub(int start) {
+        public LainList sub(int start) {
             return sub(start, value.size());
         }
 
@@ -484,9 +484,19 @@ public class Types {
 
     public static abstract class LainFunction extends LainObj implements Lambda {
         String name;
+        LainObj ast;
+        Env env;
+        LainList prams;
 
         public LainFunction(String name) {
             this.name = name;
+        }
+
+        public LainFunction(String name, LainObj ast, Env env, LainList prams) {
+            this.name = name;
+            this.ast = ast;
+            this.env = env;
+            this.prams = prams;
         }
 
         @Override
