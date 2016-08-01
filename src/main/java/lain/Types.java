@@ -23,7 +23,33 @@ public class Types {
         }
     }
 
-    public static abstract class LainAtom extends LainObj {
+    public static class LainAtom extends LainObj {
+        private LainObj atom;
+
+        public LainAtom() {
+        }
+
+        public LainObj getAtom() {
+            return atom;
+        }
+
+        public void setAtom(LainObj atom) {
+            this.atom = atom;
+        }
+
+        public LainAtom(LainObj atom) {
+            this.atom = atom;
+        }
+
+        @Override
+        public String toString() {
+            return "(atom " + Printer.printStr(atom, true) + ")";
+        }
+
+        @Override
+        public String toString(boolean readable) {
+            return "(atom " + Printer.printStr(atom, readable) + ")";
+        }
     }
 
     public static abstract class LainNumber extends LainAtom {
@@ -113,10 +139,16 @@ public class Types {
 
         public LainInteger(Integer value) {
             this.value = value;
+            setAtom(this);
         }
 
         @Override
         public String toString() {
+            return value.toString();
+        }
+
+        @Override
+        public String toString(boolean readable) {
             return value.toString();
         }
 
@@ -159,10 +191,16 @@ public class Types {
 
         public LainDecimal(Double value) {
             this.value = value;
+            setAtom(this);
         }
 
         @Override
         public String toString() {
+            return value.toString();
+        }
+
+        @Override
+        public String toString(boolean readable) {
             return value.toString();
         }
 
@@ -205,6 +243,11 @@ public class Types {
 
         public LainString(String value) {
             this.value = value;
+            setAtom(this);
+        }
+
+        public String getValue() {
+            return value;
         }
 
         @Override
@@ -237,10 +280,16 @@ public class Types {
 
         public LainSymbol(String value) {
             this.value = value;
+            setAtom(this);
         }
 
         @Override
         public String toString() {
+            return value;
+        }
+
+        @Override
+        public String toString(boolean readable) {
             return value;
         }
 
@@ -257,10 +306,16 @@ public class Types {
 
         public LainKeyword(String value) {
             this.value = value;
+            setAtom(this);
         }
 
         @Override
         public String toString() {
+            return ":" + value.substring(1);
+        }
+
+        @Override
+        public String toString(boolean readable) {
             return ":" + value.substring(1);
         }
 
@@ -359,7 +414,11 @@ public class Types {
         }
 
         public LainList sub(int start, int end) {
-            return new LainList(value.subList(start, end));
+            if (start >= size()) {
+                return new LainList();
+            } else {
+                return new LainList(value.subList(start, end));
+            }
         }
 
         public LainList sub(int start) {
@@ -484,9 +543,21 @@ public class Types {
 
     public static abstract class LainFunction extends LainObj implements Lambda {
         String name;
-        LainObj ast;
-        Env env;
-        LainList prams;
+        private LainObj ast;
+        private Env env;
+        private LainList prams;
+
+        public LainObj getAst() {
+            return ast;
+        }
+
+        public Env getEnv() {
+            return env;
+        }
+
+        public LainList getPrams() {
+            return prams;
+        }
 
         public LainFunction(String name) {
             this.name = name;
@@ -501,7 +572,7 @@ public class Types {
 
         @Override
         public String toString() {
-            return "#<function>" + name;
+            return name;
         }
     }
 }

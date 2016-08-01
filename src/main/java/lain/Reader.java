@@ -1,11 +1,15 @@
 package lain;
 
+import lain.Types.*;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static lain.Types.*;
+
 
 /**
  * Created by merlin on 16/7/26.
@@ -14,7 +18,7 @@ class Reader {
     private int position;
     private List<String> tokens;
 
-    static class ParseException extends Types.LainException {
+    static class ParseException extends LainException {
         ParseException(String message) {
             super(message);
         }
@@ -36,20 +40,20 @@ class Reader {
             return null;
     }
 
-    static Types.LainObj readStr(String str) throws ParseException {
+    static LainObj readStr(String str) throws ParseException {
         return readForm(new Reader(tokenize(str)));
     }
 
-    private static Types.LainObj readForm(Reader reader) throws ParseException {
+    private static LainObj readForm(Reader reader) throws ParseException {
         String firstToken = reader.peek();
-        Types.LainObj ret = null;
+        LainObj ret = null;
         if (firstToken != null) {
             switch (firstToken.charAt(0)) {
                 case '(':
-                    ret = readList(reader, new Types.LainList(), '(', ')');
+                    ret = readList(reader, new LainList(), '(', ')');
                     break;
                 case '[':
-                    ret = readList(reader, new Types.LainVector(), '[', ']');
+                    ret = readList(reader, new LainVector(), '[', ']');
                     break;
                 case '{':
                     ret = readHashMap(reader);
@@ -60,6 +64,9 @@ class Reader {
                     throw new ParseException("unexpected ']'");
                 case '}':
                     throw new ParseException("unexpected '}'");
+                case '@':
+                    reader.next();
+                    return new LainList(new LainSymbol("deref"), readForm(reader));
                 default:
                     ret = readAtom(reader);
             }
@@ -69,7 +76,7 @@ class Reader {
         return ret;
     }
 
-    private static Types.LainObj readAtom(Reader reader) throws ParseException {
+    private static LainObj readAtom(Reader reader) throws ParseException {
         String token = reader.next();
         Pattern pattern = Pattern.compile("(^-?[0-9]+$)|(^-?[0-9][0-9.]*$)|(^nil$)|(^true$)|(^false$)|^\"(.*)\"$|:(.*)|(^[^\"]*$)");
         Matcher matcher = pattern.matcher(token);
@@ -77,27 +84,29 @@ class Reader {
             throw new ParseException("unrecognized token '" + token + "'");
         }
         if (matcher.group(1) != null) {
-            return new Types.LainInteger(Integer.parseInt(matcher.group(1)));
-        } else if (matcher.group(2) != null) {
-            return new Types.LainDecimal(Double.parseDouble(matcher.group(2)));
-        } else if (matcher.group(3) != null) {
-            return Types.Nil;
-        } else if (matcher.group(4) != null) {
-            return Types.True;
-        } else if (matcher.group(5) != null) {
-            return Types.False;
-        } else if (matcher.group(6) != null) {
-            return new Types.LainString(StringEscapeUtils.unescapeJson(matcher.group(6)));
-        } else if (matcher.group(7) != null) {
-            return new Types.LainKeyword("\u029e" + matcher.group(7));
-        } else if (matcher.group(8) != null) {
-            return new Types.LainSymbol(matcher.group(8));
+            return new LainInteger(Integer.parseInt(matcher.group(1)));
         } else {
-            throw new ParseException("unrecognized '" + matcher.group(0) + "'");
+            if (matcher.group(2) != null) {
+                return new LainDecimal(Double.parseDouble(matcher.group(2)));
+            } else if (matcher.group(3) != null) {
+                return Nil;
+            } else if (matcher.group(4) != null) {
+                return True;
+            } else if (matcher.group(5) != null) {
+                return False;
+            } else if (matcher.group(6) != null) {
+                return new LainString(StringEscapeUtils.unescapeJson(matcher.group(6)));
+            } else if (matcher.group(7) != null) {
+                return new LainKeyword("\u029e" + matcher.group(7));
+            } else if (matcher.group(8) != null) {
+                return new LainSymbol(matcher.group(8));
+            } else {
+                throw new ParseException("unrecognized '" + matcher.group(0) + "'");
+            }
         }
     }
 
-    private static Types.LainObj readList(Reader reader, Types.LainList list, char start, char end) throws ParseException {
+    private static LainObj readList(Reader reader, LainList list, char start, char end) throws ParseException {
         String token = reader.next();
         if (token.charAt(0) != start) {
             throw new ParseException("parse error");
@@ -113,9 +122,9 @@ class Reader {
         }
     }
 
-    private static Types.LainObj readHashMap(Reader reader) throws ParseException {
-        Types.LainList list = (Types.LainList) readList(reader, new Types.LainList(), '{', '}');
-        return new Types.LainHashMap(list);
+    private static LainObj readHashMap(Reader reader) throws ParseException {
+        LainList list = (LainList) readList(reader, new LainList(), '{', '}');
+        return new LainHashMap(list);
     }
 
     /*

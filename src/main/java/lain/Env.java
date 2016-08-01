@@ -1,5 +1,9 @@
 package lain;
 
+import lain.Types.LainList;
+import lain.Types.LainObj;
+import lain.Types.LainSymbol;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,13 +24,13 @@ class Env {
         this.outer = outer;
     }
 
-    Env(Env outer, Types.LainList binds, Types.LainList exprs) {
+    Env(Env outer, LainList binds, LainList exprs) {
         inner = new HashMap();
         this.outer = outer;
         for (int i = 0; i < binds.size(); i++) {
-            Types.LainSymbol symbol = (Types.LainSymbol) binds.get(i);
+            LainSymbol symbol = (LainSymbol) binds.get(i);
             if (symbol.getValue().equals("&")) {
-                set((Types.LainSymbol) binds.get(i + 1), exprs.sub(i));
+                set((LainSymbol) binds.get(i + 1), exprs.sub(i));
                 return;
             } else {
                 set(symbol, exprs.get(i));
@@ -38,12 +42,12 @@ class Env {
         return inner;
     }
 
-    Env set(Types.LainSymbol key, Types.LainObj value) {
+    Env set(LainSymbol key, LainObj value) {
         inner.put(key.getValue(), value);
         return this;
     }
 
-    Env find(Types.LainSymbol key) {
+    Env find(LainSymbol key) {
         if (inner.containsKey(key.getValue())) {
             return this;
         } else if (outer != null) {
@@ -53,11 +57,11 @@ class Env {
         }
     }
 
-    Types.LainObj get(Types.LainSymbol key) throws Reader.ParseException {
+    LainObj get(LainSymbol key) throws Reader.ParseException {
         Env keyEnv = find(key);
         if (keyEnv == null)
             throw new Reader.ParseException("can't find :" + key);
         else
-            return (Types.LainObj) keyEnv.getInner().get(key.getValue());
+            return (LainObj) keyEnv.getInner().get(key.getValue());
     }
 }

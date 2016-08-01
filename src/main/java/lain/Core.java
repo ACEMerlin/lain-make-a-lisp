@@ -1,323 +1,408 @@
 package lain;
 
+import lain.Types.*;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
+
+import static lain.Types.*;
 
 /**
  * Created by merlin on 16/7/27.
  */
 class Core {
-    private static Types.LainFunction plus = new Types.LainFunction("+") {
+    private static LainFunction plus = new LainFunction("+") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             if (args.size() == 0) {
-                return new Types.LainInteger(0);
+                return new LainInteger(0);
             } else {
                 if (args.getValue().stream()
-                        .allMatch(p -> Types.LainInteger.class.isAssignableFrom(p.getClass()))) {
+                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
                     return args.getValue().stream()
-                            .map(e -> (Types.LainInteger) e)
-                            .reduce(new Types.LainInteger(0), Types.LainInteger::add);
+                            .map(e -> (LainInteger) e)
+                            .reduce(new LainInteger(0), LainInteger::add);
                 } else {
-                    return new Types.LainDecimal(args.getValue().stream()
-                            .map(e -> ((Types.LainNumber) e).doubleValue())
+                    return new LainDecimal(args.getValue().stream()
+                            .map(e -> ((LainNumber) e).doubleValue())
                             .reduce(0.0, Double::sum));
                 }
             }
         }
     };
 
-    private static Types.LainFunction minus = new Types.LainFunction("-") {
+    private static LainFunction minus = new LainFunction("-") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             if (args.size() == 0) {
-                throw new Types.LainException("wrong number of parameters to '-' function");
+                throw new LainException("wrong number of parameters to '-' function");
             } else if (args.size() == 1) {
                 if (args.getValue().stream()
-                        .allMatch(p -> Types.LainInteger.class.isAssignableFrom(p.getClass()))) {
-                    int first = ((Types.LainInteger) args.get(0)).intValue();
-                    return new Types.LainInteger(-first);
+                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
+                    int first = ((LainInteger) args.get(0)).intValue();
+                    return new LainInteger(-first);
                 } else {
-                    double first = ((Types.LainDecimal) args.get(0)).doubleValue();
-                    return new Types.LainDecimal(first);
+                    double first = ((LainDecimal) args.get(0)).doubleValue();
+                    return new LainDecimal(first);
                 }
             } else {
                 if (args.getValue().stream()
-                        .allMatch(p -> Types.LainInteger.class.isAssignableFrom(p.getClass()))) {
-                    Types.LainInteger first = ((Types.LainInteger) args.get(0));
+                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
+                    LainInteger first = ((LainInteger) args.get(0));
                     return (args.sub(1)).getValue().stream()
-                            .map(e -> (Types.LainInteger) e)
-                            .reduce(first, Types.LainInteger::minus);
+                            .map(e -> (LainInteger) e)
+                            .reduce(first, LainInteger::minus);
                 } else {
-                    double first = ((Types.LainDecimal) args.get(0)).doubleValue();
-                    return new Types.LainDecimal(first - (args.sub(1)).getValue().stream()
-                            .map(e -> ((Types.LainNumber) e).doubleValue())
+                    double first = ((LainDecimal) args.get(0)).doubleValue();
+                    return new LainDecimal(first - (args.sub(1)).getValue().stream()
+                            .map(e -> ((LainNumber) e).doubleValue())
                             .reduce(0.0, Double::sum));
                 }
             }
         }
     };
 
-    private static Types.LainFunction times = new Types.LainFunction("*") {
+    private static LainFunction times = new LainFunction("*") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             if (args.size() == 0) {
-                return new Types.LainInteger(1);
+                return new LainInteger(1);
             } else {
                 if (args.getValue().stream()
-                        .allMatch(p -> Types.LainInteger.class.isAssignableFrom(p.getClass()))) {
+                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
                     return args.getValue().stream()
-                            .map(e -> (Types.LainInteger) e)
-                            .reduce(new Types.LainInteger(1), Types.LainInteger::times);
+                            .map(e -> (LainInteger) e)
+                            .reduce(new LainInteger(1), LainInteger::times);
                 } else {
-                    return new Types.LainDecimal(args.getValue().stream()
-                            .map(e -> ((Types.LainNumber) e).doubleValue())
+                    return new LainDecimal(args.getValue().stream()
+                            .map(e -> ((LainNumber) e).doubleValue())
                             .reduce(1.0, Double::sum));
                 }
             }
         }
     };
 
-    private static Types.LainFunction divides = new Types.LainFunction("/") {
+    private static LainFunction divides = new LainFunction("/") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             if (args.size() == 0) {
-                throw new Types.LainException("wrong number of parameters to '/' function");
+                throw new LainException("wrong number of parameters to '/' function");
             } else if (args.size() == 1) {
-                double first = ((Types.LainNumber) args.get(0)).doubleValue();
-                return new Types.LainDecimal(1 / first);
+                double first = ((LainNumber) args.get(0)).doubleValue();
+                return new LainDecimal(1 / first);
             } else {
                 if (args.getValue().stream()
-                        .allMatch(p -> Types.LainInteger.class.isAssignableFrom(p.getClass()))) {
-                    Types.LainInteger first = ((Types.LainInteger) args.get(0));
+                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
+                    LainInteger first = ((LainInteger) args.get(0));
                     int ret = first.intValue();
-                    List<Types.LainObj> list = args.sub(1).getValue();
-                    for (Types.LainObj aList : list) {
-                        ret = ret / ((Types.LainInteger) aList).intValue();
+                    List<LainObj> list = args.sub(1).getValue();
+                    for (LainObj aList : list) {
+                        ret = ret / ((LainInteger) aList).intValue();
                     }
-                    return new Types.LainInteger(ret);
+                    return new LainInteger(ret);
                 } else {
-                    Types.LainNumber first = ((Types.LainNumber) args.get(0));
+                    LainNumber first = ((LainNumber) args.get(0));
                     double ret = first.doubleValue();
-                    List<Types.LainObj> list = (args.sub(1)).getValue();
-                    for (Types.LainObj aList : list) {
-                        ret = ret / ((Types.LainNumber) aList).doubleValue();
+                    List<LainObj> list = (args.sub(1)).getValue();
+                    for (LainObj aList : list) {
+                        ret = ret / ((LainNumber) aList).doubleValue();
                     }
-                    return new Types.LainDecimal(ret);
+                    return new LainDecimal(ret);
                 }
             }
         }
     };
 
-    private static Types.LainFunction equal = new Types.LainFunction("=") {
+    private static LainFunction equal = new LainFunction("=") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = (args.sub(i + 1));
+                LainList rest = (args.sub(i + 1));
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
-                    if (Types.equal(args.get(i), rest.get(j)).equals(Types.False)) {
-                        return Types.False;
+                    if (equal(args.get(i), rest.get(j)).equals(False)) {
+                        return False;
                     }
                 }
             }
-            return Types.True;
+            return True;
         }
     };
 
-    private static Types.LainFunction lt = new Types.LainFunction("<") {
+    private static LainFunction lt = new LainFunction("<") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = args.sub(i + 1);
+                LainList rest = args.sub(i + 1);
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
-                    if (Types.LainNumber.lt(
-                            (Types.LainNumber) args.get(i),
-                            (Types.LainNumber) rest.get(j)).equals(Types.False)) {
-                        return Types.False;
+                    if (LainNumber.lt(
+                            (LainNumber) args.get(i),
+                            (LainNumber) rest.get(j)).equals(False)) {
+                        return False;
                     }
                 }
             }
-            return Types.True;
+            return True;
         }
     };
 
-    private static Types.LainFunction lte = new Types.LainFunction("<=") {
+    private static LainFunction lte = new LainFunction("<=") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = args.sub(i + 1);
+                LainList rest = args.sub(i + 1);
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
-                    if (Types.LainNumber.lte(
-                            (Types.LainNumber) args.get(i),
-                            (Types.LainNumber) rest.get(j)).equals(Types.False)) {
-                        return Types.False;
+                    if (LainNumber.lte(
+                            (LainNumber) args.get(i),
+                            (LainNumber) rest.get(j)).equals(False)) {
+                        return False;
                     }
                 }
             }
-            return Types.True;
+            return True;
         }
     };
 
-    private static Types.LainFunction gt = new Types.LainFunction(">") {
+    private static LainFunction gt = new LainFunction(">") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = args.sub(i + 1);
+                LainList rest = args.sub(i + 1);
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
-                    if (Types.LainNumber.gt(
-                            (Types.LainNumber) args.get(i),
-                            (Types.LainNumber) rest.get(j)).equals(Types.False)) {
-                        return Types.False;
+                    if (LainNumber.gt(
+                            (LainNumber) args.get(i),
+                            (LainNumber) rest.get(j)).equals(False)) {
+                        return False;
                     }
                 }
             }
-            return Types.True;
+            return True;
         }
     };
 
-    private static Types.LainFunction gte = new Types.LainFunction(">=") {
+    private static LainFunction gte = new LainFunction(">=") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             int size = args.getValue().size();
             for (int i = 0; i < size; i++) {
-                Types.LainList rest = args.sub(i + 1);
+                LainList rest = args.sub(i + 1);
                 int restSize = rest.size();
                 for (int j = 0; j < restSize; j++) {
-                    if (Types.LainNumber.gte(
-                            (Types.LainNumber) args.get(i),
-                            (Types.LainNumber) rest.get(j)).equals(Types.False)) {
-                        return Types.False;
+                    if (LainNumber.gte(
+                            (LainNumber) args.get(i),
+                            (LainNumber) rest.get(j)).equals(False)) {
+                        return False;
                     }
                 }
             }
-            return Types.True;
+            return True;
         }
     };
 
-    private static Types.LainFunction prn = new Types.LainFunction("prn") {
+    private static LainFunction prn = new LainFunction("prn") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             StringJoiner sj = new StringJoiner(" ", "", "");
-            for (Types.LainObj arg : args.getValue()) {
+            for (LainObj arg : args.getValue()) {
                 sj.add(Printer.printStr(arg, true));
             }
             System.out.print(sj.toString() + "\n");
-            return Types.Nil;
+            return Nil;
         }
     };
 
-    private static Types.LainFunction prStr = new Types.LainFunction("pr-str") {
+    private static LainFunction prStr = new LainFunction("pr-str") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             StringJoiner sj = new StringJoiner(" ", "", "");
-            for (Types.LainObj arg : args.getValue()) {
+            for (LainObj arg : args.getValue()) {
                 sj.add(Printer.printStr(arg, true));
             }
-            return new Types.LainString(sj.toString());
+            return new LainString(sj.toString());
         }
     };
 
-    private static Types.LainFunction str = new Types.LainFunction("str") {
+    private static LainFunction str = new LainFunction("str") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             StringJoiner sj = new StringJoiner("", "", "");
-            for (Types.LainObj arg : args.getValue()) {
+            for (LainObj arg : args.getValue()) {
                 sj.add(Printer.printStr(arg, false));
             }
-            return new Types.LainString(sj.toString());
+            return new LainString(sj.toString());
         }
     };
 
-    private static Types.LainFunction println = new Types.LainFunction("println") {
+    private static LainFunction println = new LainFunction("println") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
+        public LainObj apply(LainList args) throws LainException {
             StringJoiner sj = new StringJoiner(" ", "", "");
-            for (Types.LainObj arg : args.getValue()) {
+            for (LainObj arg : args.getValue()) {
                 sj.add(Printer.printStr(arg, false));
             }
             System.out.print(sj.toString() + "\n");
-            return Types.Nil;
+            return Nil;
         }
     };
 
-    private static Types.LainFunction list = new Types.LainFunction("list") {
+    private static LainFunction list = new LainFunction("list") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
-            return new Types.LainList(args.getValue());
+        public LainObj apply(LainList args) throws LainException {
+            return new LainList(args.getValue());
         }
     };
 
-    private static Types.LainFunction isList = new Types.LainFunction("list?") {
+    private static LainFunction isList = new LainFunction("list?") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
-            for (Types.LainObj arg : args.getValue()) {
-                if (arg instanceof Types.LainVector) {
-                    return Types.False;
+        public LainObj apply(LainList args) throws LainException {
+            for (LainObj arg : args.getValue()) {
+                if (arg instanceof LainVector) {
+                    return False;
                 }
-                if (!(arg instanceof Types.LainList)) {
-                    return Types.False;
-                }
-            }
-            return Types.True;
-        }
-    };
-
-    private static Types.LainFunction isEmpty = new Types.LainFunction("empty?") {
-        @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
-            for (Types.LainObj arg : args.getValue()) {
-                if (!(arg instanceof Types.LainList)) {
-                    return Types.False;
-                } else if (((Types.LainList) arg).size() != 0) {
-                    return Types.False;
+                if (!(arg instanceof LainList)) {
+                    return False;
                 }
             }
-            return Types.True;
+            return True;
         }
     };
 
-    private static Types.LainFunction count = new Types.LainFunction("count") {
+    private static LainFunction isEmpty = new LainFunction("empty?") {
         @Override
-        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
-            if (!(args.get(0) instanceof Types.LainList)) {
-                return new Types.LainInteger(0);
+        public LainObj apply(LainList args) throws LainException {
+            for (LainObj arg : args.getValue()) {
+                if (!(arg instanceof LainList)) {
+                    return False;
+                } else if (((LainList) arg).size() != 0) {
+                    return False;
+                }
+            }
+            return True;
+        }
+    };
+
+    private static LainFunction count = new LainFunction("count") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            if (!(args.get(0) instanceof LainList)) {
+                return new LainInteger(0);
             } else {
-                return new Types.LainInteger(((Types.LainList) args.get(0)).size());
+                return new LainInteger(((LainList) args.get(0)).size());
             }
         }
     };
 
-    private static Map<String, Types.LainObj> core = new HashMap<>();
+    private static LainFunction readString = new LainFunction("read-string") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            if (args.get(0) instanceof LainString)
+                return Reader.readStr(((LainString) args.get(0)).getValue());
+            else
+                throw new LainException("wrong type of argument to function 'read-string'");
+        }
+    };
+
+    private static LainFunction slurp = new LainFunction("slurp") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            try {
+                return new LainString(
+                        new String(Files.readAllBytes(
+                                Paths.get(((LainString) args.get(0)).getValue()))));
+
+            } catch (IOException e) {
+                throw new LainException("can't find file: " + args.get(0));
+            }
+        }
+    };
+
+    private static LainFunction atom = new LainFunction("atom") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            return new LainAtom(args.get(0));
+        }
+    };
+
+    private static LainFunction isAtom = new LainFunction("atom?") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            return args.get(0) instanceof LainAtom ? True : False;
+        }
+    };
+
+    private static LainFunction deRef = new LainFunction("deref") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            return ((LainAtom) args.get(0)).getAtom();
+        }
+    };
+
+    private static LainFunction resetAtom = new LainFunction("reset!") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            ((LainAtom) args.get(0)).setAtom(args.get(1));
+            return args.get(1);
+        }
+    };
+
+    private static LainFunction swapAtom = new LainFunction("swap!") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            LainFunction func = (LainFunction) args.get(1);
+            LainList restArgs = args.sub(2);
+            LainAtom atom = (LainAtom) args.get(0);
+            LainList newArgs = new LainList();
+            newArgs.getValue().addAll(restArgs.getValue());
+            newArgs.getValue().add(0, atom.getAtom());
+            atom.setAtom(func.apply(newArgs));
+            return atom.getAtom();
+        }
+    };
+
+    private static Map<String, LainObj> core = new HashMap<>();
 
     static {
-        core.put(plus.name, plus);
-        core.put(minus.name, minus);
-        core.put(times.name, times);
-        core.put(divides.name, divides);
-        core.put(Types.True.getValue(), Types.True);
-        core.put(Types.False.getValue(), Types.False);
-        core.put(Types.Nil.getValue(), Types.Nil);
-        core.put(equal.name, equal);
-        core.put(lt.name, lt);
-        core.put(lte.name, lte);
-        core.put(gt.name, gt);
-        core.put(gte.name, gte);
-        core.put(prn.name, prn);
-        core.put(prStr.name, prStr);
-        core.put(str.name, str);
-        core.put(println.name, println);
-        core.put(list.name, list);
-        core.put(isList.name, isList);
-        core.put(isEmpty.name, isEmpty);
-        core.put(count.name, count);
+        put(plus);
+        put(minus);
+        put(times);
+        put(divides);
+        put(True);
+        put(False);
+        put(Nil);
+        put(equal);
+        put(lt);
+        put(lte);
+        put(gt);
+        put(gte);
+        put(prn);
+        put(prStr);
+        put(str);
+        put(println);
+        put(list);
+        put(isList);
+        put(isEmpty);
+        put(count);
+        put(readString);
+        put(slurp);
+        put(atom);
+        put(isAtom);
+        put(deRef);
+        put(resetAtom);
+        put(swapAtom);
     }
 
-    static Map<String, Types.LainObj> ns = Collections.unmodifiableMap(core);
+    private static void put(LainObj func) {
+        core.put(func.toString(), func);
+    }
+
+    static Map<String, LainObj> ns = Collections.unmodifiableMap(core);
 }

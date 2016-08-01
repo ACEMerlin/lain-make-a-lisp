@@ -1,88 +1,92 @@
 package lain;
 
+import lain.Types.*;
+
 import java.io.IOException;
 import java.util.Map;
+
+import static lain.Types.*;
 
 /**
  * Created by merlin on 16/7/27.
  */
 public class Lain {
 
-    private static Types.LainObj evalAst(Types.LainObj ast, Env env) throws Types.LainException {
-        if (ast instanceof Types.LainSymbol) {
-            return env.get((Types.LainSymbol) ast);
-        } else if (ast instanceof Types.LainVector) {
-            Types.LainVector newVector = new Types.LainVector();
-            Types.LainVector oldVector = (Types.LainVector) ast;
-            for (Types.LainObj item : oldVector.getValue()) {
+    private static LainObj evalAst(LainObj ast, Env env) throws LainException {
+        if (ast instanceof LainSymbol) {
+            return env.get((LainSymbol) ast);
+        } else if (ast instanceof LainVector) {
+            LainVector newVector = new LainVector();
+            LainVector oldVector = (LainVector) ast;
+            for (LainObj item : oldVector.getValue()) {
                 newVector.accumulate(EVAL(item, env));
             }
             return newVector;
-        } else if (ast instanceof Types.LainList) {
-            Types.LainList newList = new Types.LainList();
-            Types.LainList oldList = (Types.LainList) ast;
-            for (Types.LainObj item : oldList.getValue()) {
+        } else if (ast instanceof LainList) {
+            LainList newList = new LainList();
+            LainList oldList = (LainList) ast;
+            for (LainObj item : oldList.getValue()) {
                 newList.accumulate(EVAL(item, env));
             }
             return newList;
-        } else if (ast instanceof Types.LainHashMap) {
-            Types.LainHashMap newHashMap = new Types.LainHashMap();
-            Types.LainHashMap oldHashMap = (Types.LainHashMap) ast;
+        } else if (ast instanceof LainHashMap) {
+            LainHashMap newHashMap = new LainHashMap();
+            LainHashMap oldHashMap = (LainHashMap) ast;
             for (Object o : oldHashMap.entries()) {
                 Map.Entry entry = (Map.Entry) o;
-                newHashMap.put((Types.LainAtom) entry.getKey(), EVAL(
-                        (Types.LainObj) entry.getValue(), env));
+                newHashMap.put((LainAtom) entry.getKey(), EVAL(
+                        (LainObj) entry.getValue(), env));
             }
             return newHashMap;
         }
         return ast;
     }
 
-    private static Types.LainObj READ(String str) throws Reader.ParseException {
+    private static LainObj READ(String str) throws Reader.ParseException {
         return Reader.readStr(str);
     }
 
-    private static Types.LainObj EVAL(Types.LainObj ast, Env env) throws Types.LainException {
-        Types.LainObj a0, a1, a2, a3;
+    private static LainObj EVAL(LainObj ast, Env env) throws LainException {
+        LainObj a0, a1, a2, a3;
         while (true) {
-            if (!(ast instanceof Types.LainList) || (ast instanceof Types.LainVector)) {
+            if (!(ast instanceof LainList) || (ast instanceof LainVector)) {
                 return evalAst(ast, env);
             }
-            Types.LainList list = (Types.LainList) ast;
+            LainList list = (LainList) ast;
             if (list.size() == 0) {
                 return ast;
             }
-            a0 = ((Types.LainList) ast).get(0);
-            a1 = ((Types.LainList) ast).get(1);
-            a2 = ((Types.LainList) ast).get(2);
-            a3 = ((Types.LainList) ast).get(3);
-            if (a0 instanceof Types.LainList) {
-                Types.LainObj obj = EVAL(a0, env);
-                if (obj instanceof Types.LainFunction) {
-                    Types.LainObj args = evalAst(list.rest(), env);
-                    return ((Types.LainFunction) obj).apply((Types.LainList) args);
+            a0 = ((LainList) ast).get(0);
+            a1 = ((LainList) ast).get(1);
+            a2 = ((LainList) ast).get(2);
+            a3 = ((LainList) ast).get(3);
+            if (a0 instanceof LainList) {
+                LainObj obj = EVAL(a0, env);
+                if (obj instanceof LainFunction) {
+                    LainObj args = evalAst(list.rest(), env);
+                    return ((LainFunction) obj).apply((LainList) args);
                 }
             }
-            if (!(a0 instanceof Types.LainSymbol))
+            if (!(a0 instanceof LainSymbol))
                 throw new Reader.ParseException("can't apply non-symbol: " + a0.toString());
-            Types.LainSymbol symbol = (Types.LainSymbol) a0;
+            LainSymbol symbol = (LainSymbol) a0;
             switch (symbol.getValue()) {
                 case "def!":
-                    Types.LainObj result = EVAL(a2, env);
-                    env.set((Types.LainSymbol) a1, result);
+                    LainObj result = EVAL(a2, env);
+                    env.set((LainSymbol) a1, result);
                     return result;
                 case "let*":
                     Env newEnv = new Env(env);
-                    Types.LainList pairs = (Types.LainList) a1;
+                    LainList pairs = (LainList) a1;
                     for (int i = 0; i < pairs.size(); i = i + 2) {
-                        newEnv.set((Types.LainSymbol) pairs.get(i),
+                        newEnv.set((LainSymbol) pairs.get(i),
                                 EVAL(pairs.get(i + 1), newEnv));
                     }
                     ast = a2;
                     env = newEnv;
                     break;
                 case "do":
-                    Types.LainList doArgs = (list.rest());
+                    LainList doArgs = (list.rest());
                     for (int i = 0; i < doArgs.getValue().size(); i++) {
                         if (i != doArgs.getValue().size() - 1) {
                             EVAL(doArgs.get(i), env);
@@ -94,12 +98,12 @@ public class Lain {
                     ast = list.get(list.size() - 1);
                     break;
                 case "if":
-                    Types.LainObj predicate = EVAL(a1, env);
-                    if (!predicate.equals(Types.Nil) && !predicate.equals(Types.False)) {
+                    LainObj predicate = EVAL(a1, env);
+                    if (!predicate.equals(Nil) && !predicate.equals(False)) {
                         ast = a2;
                         break;
                     } else if (a3 == null) {
-                        return Types.Nil;
+                        return Nil;
                     } else {
                         ast = a3;
                         break;
@@ -110,20 +114,20 @@ public class Lain {
                     //(a b): a1
                     //(+ a b) : a2
                     //a -> 2, b -> 3 : new env (args)
-                    final Types.LainObj a2f = a2;
-                    final Types.LainObj a1f = a1;
-                    return new Types.LainFunction("lambda", a2, env, (Types.LainList) a1) {
+                    final LainObj a2f = a2;
+                    final LainObj a1f = a1;
+                    return new LainFunction("lambda", a2, env, (LainList) a1) {
                         @Override
-                        public Types.LainObj apply(Types.LainList args) throws Types.LainException {
-                            return EVAL(a2f, new Env(env, (Types.LainList) a1f, args));
+                        public LainObj apply(LainList args) throws LainException {
+                            return EVAL(a2f, new Env(getEnv(), (LainList) a1f, args));
                         }
                     };
                 default:
-                    Types.LainList evalResult = (Types.LainList) evalAst(list, env);
-                    Types.LainFunction caller = (Types.LainFunction) evalResult.get(0);
+                    LainList evalResult = (LainList) evalAst(list, env);
+                    LainFunction caller = (LainFunction) evalResult.get(0);
                     if (caller.name.equals("lambda") || caller.name.equals("λ")) {
-                        ast = caller.ast;
-                        env = new Env(caller.env, caller.prams, evalResult.sub(1));
+                        ast = caller.getAst();
+                        env = new Env(caller.getEnv(), caller.getPrams(), evalResult.sub(1));
                         break;
                     } else {
                         return caller.apply(evalResult.rest());
@@ -132,30 +136,46 @@ public class Lain {
         }
     }
 
-    private static String PRINT(Types.LainObj exp) {
+    private static String PRINT(LainObj exp) {
         return Printer.printStr(exp, true);
     }
 
-    private static Types.LainObj RE(Env env, String str) throws Types.LainException {
+    private static LainObj RE(Env env, String str) throws LainException {
         return EVAL(READ(str), env);
     }
 
-    public static void main(String[] args) throws Types.LainException {
+    public static void main(String[] args) throws LainException {
         String prompt = "user> ";
-        Env env = new Env(Core.ns);
+        final Env env = new Env(Core.ns);
+        env.set(new LainSymbol("eval"), new LainFunction("eval") {
+            @Override
+            public LainObj apply(LainList args) throws LainException {
+                return EVAL(args.get(0), env);
+            }
+        });
+        LainList lainArgs = new LainList();
+        for (String arg : args) {
+            lainArgs.accumulate(new LainString(arg));
+        }
+        env.set(new LainSymbol("*ARGV*"), lainArgs);
         RE(env, "(def! not (lambda (a) (if a false true)))");
+        RE(env, "(def! load-file (lambda (f) (eval (read-string (str \"(do \" (slurp f) \")\")))))");
+        if (args.length > 0) {
+            RE(env, "(load-file \"" + args[0] + "\")");
+            return;
+        }
         while (true) {
             String line;
             try {
                 line = ReadLine.jnaReadLine(prompt);
                 if (line == null || line.equals(""))
                     continue;
-                Types.LainObj lainObj = RE(env, line);
+                LainObj lainObj = RE(env, line);
                 if (lainObj != null)
                     System.out.println(PRINT(lainObj));
             } catch (IOException | ReadLine.EOFException e) {
                 break;
-            } catch (Types.LainException e) {
+            } catch (LainException e) {
                 e.printStackTrace();
             }
         }
