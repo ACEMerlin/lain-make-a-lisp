@@ -128,6 +128,10 @@ public class Types {
                 return False;
             }
         }
+
+        public static double times (double a, double b) {
+            return a * b;
+        }
     }
 
     public static class LainInteger extends LainNumber {

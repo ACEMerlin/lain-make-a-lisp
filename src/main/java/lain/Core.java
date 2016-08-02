@@ -78,7 +78,7 @@ class Core {
                 } else {
                     return new LainDecimal(args.getValue().stream()
                             .map(e -> ((LainNumber) e).doubleValue())
-                            .reduce(1.0, Double::sum));
+                            .reduce(1.0, LainNumber::times));
                 }
             }
         }
