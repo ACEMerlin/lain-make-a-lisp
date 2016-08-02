@@ -113,7 +113,7 @@ public class Lain {
                     //((lambda (a b) (+ a b)) 2 3)
                     //(a b): a1
                     //(+ a b) : a2
-                    //a -> 2, b -> 3 : new env (args)
+                    //a -> 2, b -> 3 : new env (a1 -> args)
                     final LainObj a2f = a2;
                     final LainObj a1f = a1;
                     return new LainFunction("lambda", a2, env, (LainList) a1) {
@@ -122,6 +122,11 @@ public class Lain {
                             return EVAL(a2f, new Env(getEnv(), (LainList) a1f, args));
                         }
                     };
+                case "quote":
+                    return list.get(1);
+                case "quasiquote":
+                    ast = quasiquote(a1);
+                    break;
                 default:
                     LainList evalResult = (LainList) evalAst(list, env);
                     LainFunction caller = (LainFunction) evalResult.get(0);
@@ -133,6 +138,38 @@ public class Lain {
                         return caller.apply(evalResult.rest());
                     }
             }
+        }
+    }
+
+    private static boolean isPair(LainObj obj) {
+        return obj instanceof LainList && ((LainList) obj).size() > 0;
+    }
+
+    /*
+     * (def! lst (quote (2 3))) -> (2 3)
+     * (quasiquote (1 (unquote lst))) -> (1 (2 3))
+     * (quasiquote (1 (splice-unquote lst))) -> (1 2 3)
+     */
+    private static LainObj quasiquote(LainObj ast) {
+        if (!isPair(ast)) {
+            return new LainList(new LainSymbol("quote"), ast);
+        } else {
+            LainObj a0 = ((LainList) ast).get(0);
+            if ((a0 instanceof LainSymbol) &&
+                    (((LainSymbol) a0).getValue().equals("unquote"))) {
+                return ((LainList) ast).get(1);
+            } else if (isPair(a0)) {
+                LainObj a00 = ((LainList) a0).get(0);
+                if ((a00 instanceof LainSymbol) &&
+                        (((LainSymbol) a00).getValue().equals("splice-unquote"))) {
+                    return new LainList(new LainSymbol("concat"),
+                            ((LainList) a0).get(1),
+                            quasiquote(((LainList) ast).rest()));
+                }
+            }
+            return new LainList(new LainSymbol("cons"),
+                    quasiquote(a0),
+                    quasiquote(((LainList) ast).rest()));
         }
     }
 
