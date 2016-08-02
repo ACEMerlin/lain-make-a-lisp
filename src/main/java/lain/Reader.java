@@ -67,6 +67,20 @@ class Reader {
                 case '@':
                     reader.next();
                     return new LainList(new LainSymbol("deref"), readForm(reader));
+                case '\'':
+                    reader.next();
+                    return new LainList(new LainSymbol("quote"), readForm(reader));
+                case '`':
+                    reader.next();
+                    return new LainList(new LainSymbol("quasiquote"), readForm(reader));
+                case '~':
+                    if (firstToken.equals("~")) {
+                        reader.next();
+                        return new LainList(new LainSymbol("unquote"), readForm(reader));
+                    } else if (firstToken.equals("~@")) {
+                        reader.next();
+                        return new LainList(new LainSymbol("splice-unquote"), readForm(reader));
+                    }
                 default:
                     ret = readAtom(reader);
             }

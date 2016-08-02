@@ -402,6 +402,27 @@ class Core {
         }
     };
 
+    private static LainFunction cons = new LainFunction("cons") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            List<LainObj> list = new ArrayList<>();
+            list.add(args.get(0));
+            list.addAll(((LainList) args.get(1)).getValue());
+            return new LainList(list);
+        }
+    };
+
+    private static LainFunction concat = new LainFunction("concat") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            List<LainObj> list = new ArrayList<>();
+            for (LainObj arg : args.getValue()) {
+                list.addAll(((LainList) arg).getValue());
+            }
+            return new LainList(list);
+        }
+    };
+
     private static Map<String, LainObj> core = new HashMap<>();
 
     static {
@@ -432,6 +453,8 @@ class Core {
         put(deRef);
         put(resetAtom);
         put(swapAtom);
+        put(cons);
+        put(concat);
     }
 
     private static void put(LainObj func) {
