@@ -42,7 +42,7 @@ public class Lain {
         return ast;
     }
 
-    private static LainObj READ(String str) throws Reader.ParseException {
+    private static LainObj READ(String str) throws LainException {
         return Reader.readStr(str);
     }
 
@@ -52,14 +52,18 @@ public class Lain {
             if (!(ast instanceof LainList) || (ast instanceof LainVector)) {
                 return evalAst(ast, env);
             }
-            LainList list = (LainList) ast;
+            LainObj expanded = macroexpand(ast, env);
+            if (!(expanded instanceof LainList)) {
+                return evalAst(expanded, env);
+            }
+            LainList list = (LainList) expanded;
             if (list.size() == 0) {
                 return ast;
             }
-            a0 = ((LainList) ast).get(0);
-            a1 = ((LainList) ast).get(1);
-            a2 = ((LainList) ast).get(2);
-            a3 = ((LainList) ast).get(3);
+            a0 = list.get(0);
+            a1 = list.get(1);
+            a2 = list.get(2);
+            a3 = list.get(3);
             if (a0 instanceof LainList) {
                 LainObj obj = EVAL(a0, env);
                 if (obj instanceof LainFunction) {
@@ -68,7 +72,7 @@ public class Lain {
                 }
             }
             if (!(a0 instanceof LainSymbol))
-                throw new Reader.ParseException("can't apply non-symbol: " + a0.toString());
+                throw new LainException("can't apply non-symbol: " + a0.toString());
             LainSymbol symbol = (LainSymbol) a0;
             switch (symbol.getValue()) {
                 case "def!":
@@ -127,6 +131,13 @@ public class Lain {
                 case "quasiquote":
                     ast = quasiquote(a1);
                     break;
+                case "defmacro!":
+                    LainFunction marcoResult = (LainFunction) EVAL(a2, env);
+                    marcoResult.setMacro(true);
+                    env.set((LainSymbol) a1, marcoResult);
+                    return marcoResult;
+                case "macroexpand":
+                    return macroexpand(a1, env);
                 default:
                     LainList evalResult = (LainList) evalAst(list, env);
                     LainFunction caller = (LainFunction) evalResult.get(0);
@@ -139,6 +150,29 @@ public class Lain {
                     }
             }
         }
+    }
+
+    private static boolean isMacroCall(LainObj ast, Env env) throws LainException {
+        if (ast instanceof LainList) {
+            LainObj a0 = ((LainList) ast).get(0);
+            if (a0 instanceof LainSymbol &&
+                    env.find((LainSymbol) a0) != null) {
+                LainObj macro = env.get((LainSymbol) a0);
+                if (macro instanceof LainFunction &&
+                        ((LainFunction) macro).isMacro()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static LainObj macroexpand(LainObj ast, Env env) throws LainException {
+        while (isMacroCall(ast, env)) {
+            ast = ((LainFunction) env.get((LainSymbol) ((LainList) ast).get(0)))
+                    .apply(((LainList) ast).rest());
+        }
+        return ast;
     }
 
     private static boolean isPair(LainObj obj) {
@@ -213,6 +247,8 @@ public class Lain {
         env.set(new LainSymbol("*ARGV*"), lainArgs);
         RE(env, "(def! not (lambda (a) (if a false true)))");
         RE(env, "(def! load-file (lambda (f) (eval (read-string (str \"(do \" (slurp f) \")\")))))");
+        RE(env, "(defmacro! cond (lambda (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))");
+        RE(env, "(defmacro! or (lambda (& xs) (if (empty? xs) nil (if (= 1 (count xs)) (first xs) `(let* (or_FIXME ~(first xs)) (if or_FIXME or_FIXME (or ~@(rest xs))))))))");
         if (args.length > 0) {
             RE(env, "(load-file \"" + args[0] + "\")");
             return;

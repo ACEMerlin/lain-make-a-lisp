@@ -14,6 +14,13 @@ import static lain.Types.*;
  * Created by merlin on 16/7/27.
  */
 class Core {
+    private static LainFunction lainThrow = new LainFunction("throw") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            throw new LainException(args.get(0).toString());
+        }
+    };
+
     private static LainFunction plus = new LainFunction("+") {
         @Override
         public LainObj apply(LainList args) throws LainException {
@@ -444,6 +451,42 @@ class Core {
         }
     };
 
+    private static LainFunction nth = new LainFunction("nth") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            int index = ((LainInteger) args.get(1)).getValue();
+            if (index < ((LainList) args.get(0)).size()) {
+                return ((LainList) args.get(0)).get(index);
+            } else {
+                throw new LainException("nth: index out of bound!");
+            }
+        }
+    };
+
+    private static LainFunction first = new LainFunction("first") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            LainObj first = args.get(0);
+            if (first == Nil) {
+                return Nil;
+            }
+            LainList list = (LainList) first;
+            return list.size() > 0 ? list.get(0) : Nil;
+        }
+    };
+
+    private static LainFunction rest = new LainFunction("rest") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            LainObj first = args.get(0);
+            if (first == Nil) {
+                return new LainList();
+            }
+            LainList list = (LainList) first;
+            return list.rest();
+        }
+    };
+
     private static Map<String, LainObj> core = new HashMap<>();
 
     static {
@@ -478,6 +521,10 @@ class Core {
         put(concat);
         put(concatVec);
         put(consVec);
+        put(nth);
+        put(first);
+        put(rest);
+        put(lainThrow);
     }
 
     private static void put(LainObj func) {

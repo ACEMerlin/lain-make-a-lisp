@@ -18,12 +18,6 @@ class Reader {
     private int position;
     private List<String> tokens;
 
-    static class ParseException extends LainException {
-        ParseException(String message) {
-            super(message);
-        }
-    }
-
     private Reader(List<String> tokens) {
         this.position = 0;
         this.tokens = tokens;
@@ -40,11 +34,11 @@ class Reader {
             return null;
     }
 
-    static LainObj readStr(String str) throws ParseException {
+    static LainObj readStr(String str) throws LainException {
         return readForm(new Reader(tokenize(str)));
     }
 
-    private static LainObj readForm(Reader reader) throws ParseException {
+    private static LainObj readForm(Reader reader) throws LainException {
         String firstToken = reader.peek();
         LainObj ret = null;
         if (firstToken != null) {
@@ -59,11 +53,11 @@ class Reader {
                     ret = readHashMap(reader);
                     break;
                 case ')':
-                    throw new ParseException("unexpected ')'");
+                    throw new LainException("unexpected ')'");
                 case ']':
-                    throw new ParseException("unexpected ']'");
+                    throw new LainException("unexpected ']'");
                 case '}':
-                    throw new ParseException("unexpected '}'");
+                    throw new LainException("unexpected '}'");
                 case '@':
                     reader.next();
                     return new LainList(new LainSymbol("deref"), readForm(reader));
@@ -85,17 +79,17 @@ class Reader {
                     ret = readAtom(reader);
             }
             if (ret == null)
-                throw new ParseException("parse error");
+                throw new LainException("parse error");
         }
         return ret;
     }
 
-    private static LainObj readAtom(Reader reader) throws ParseException {
+    private static LainObj readAtom(Reader reader) throws LainException {
         String token = reader.next();
         Pattern pattern = Pattern.compile("(^-?[0-9]+$)|(^-?[0-9][0-9.]*$)|(^nil$)|(^true$)|(^false$)|^\"(.*)\"$|:(.*)|(^[^\"]*$)");
         Matcher matcher = pattern.matcher(token);
         if (!matcher.find()) {
-            throw new ParseException("unrecognized token '" + token + "'");
+            throw new LainException("unrecognized token '" + token + "'");
         }
         if (matcher.group(1) != null) {
             return new LainInteger(Integer.parseInt(matcher.group(1)));
@@ -115,28 +109,28 @@ class Reader {
             } else if (matcher.group(8) != null) {
                 return new LainSymbol(matcher.group(8));
             } else {
-                throw new ParseException("unrecognized '" + matcher.group(0) + "'");
+                throw new LainException("unrecognized '" + matcher.group(0) + "'");
             }
         }
     }
 
-    private static LainObj readList(Reader reader, LainList list, char start, char end) throws ParseException {
+    private static LainObj readList(Reader reader, LainList list, char start, char end) throws LainException {
         String token = reader.next();
         if (token.charAt(0) != start) {
-            throw new ParseException("parse error");
+            throw new LainException("parse error");
         } else {
             while ((token = reader.peek()) != null && token.charAt(0) != end) {
                 list.accumulate(readForm(reader));
             }
             if (token == null) {
-                throw new ParseException("expected: '" + end + "'!");
+                throw new LainException("expected: '" + end + "'!");
             }
             reader.next();
             return list;
         }
     }
 
-    private static LainObj readHashMap(Reader reader) throws ParseException {
+    private static LainObj readHashMap(Reader reader) throws LainException {
         LainList list = (LainList) readList(reader, new LainList(), '{', '}');
         return new LainHashMap(list);
     }

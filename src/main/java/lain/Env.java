@@ -1,5 +1,6 @@
 package lain;
 
+import lain.Types.LainException;
 import lain.Types.LainList;
 import lain.Types.LainObj;
 import lain.Types.LainSymbol;
@@ -47,7 +48,7 @@ class Env {
         return this;
     }
 
-    private Env find(LainSymbol key) {
+    Env find(LainSymbol key) {
         if (inner.containsKey(key.getValue())) {
             return this;
         } else if (outer != null) {
@@ -57,10 +58,10 @@ class Env {
         }
     }
 
-    LainObj get(LainSymbol key) throws Reader.ParseException {
+    LainObj get(LainSymbol key) throws LainException {
         Env keyEnv = find(key);
         if (keyEnv == null)
-            throw new Reader.ParseException("can't find :" + key);
+            throw new LainException("can't find :" + key);
         else
             return (LainObj) keyEnv.getInner().get(key.getValue());
     }

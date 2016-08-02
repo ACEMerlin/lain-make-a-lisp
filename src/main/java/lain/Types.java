@@ -461,11 +461,11 @@ public class Types {
             value.put(atom, obj);
         }
 
-        public LainHashMap(LainObj... obj) throws Reader.ParseException {
+        public LainHashMap(LainObj... obj) throws LainException {
             this(new LainList(obj));
         }
 
-        public LainHashMap(LainList list) throws Reader.ParseException {
+        public LainHashMap(LainList list) throws LainException {
             value = new HashMap<LainAtom, LainObj>();
             if ((list.value.size() & 1) == 0) {
                 for (int i = 0; i < list.value.size(); i = i + 2) {
@@ -475,11 +475,11 @@ public class Types {
                             (LainKeyword.class.isAssignableFrom(key.getClass()))) {
                         this.value.put((LainAtom) key, value);
                     } else {
-                        throw new Reader.ParseException("wrong type of key in HashMap!");
+                        throw new LainException("wrong type of key in HashMap!");
                     }
                 }
             } else {
-                throw new Reader.ParseException("wrong size of HashMap!");
+                throw new LainException("wrong size of HashMap!");
             }
         }
 
@@ -543,6 +543,16 @@ public class Types {
         private LainObj ast;
         private Env env;
         private LainList prams;
+
+        public boolean isMacro() {
+            return isMacro;
+        }
+
+        public void setMacro(boolean macro) {
+            isMacro = macro;
+        }
+
+        private boolean isMacro = false;
 
         public LainObj getAst() {
             return ast;
