@@ -378,6 +378,16 @@ class Core {
         }
     };
 
+    private static LainFunction consVec = new LainFunction("cons-vec") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            List<LainObj> list = new ArrayList<>();
+            list.add(args.get(0));
+            list.addAll(((LainList) args.get(1)).getValue());
+            return new LainVector(list);
+        }
+    };
+
     private static LainFunction concat = new LainFunction("concat") {
         @Override
         public LainObj apply(LainList args) throws LainException {
@@ -386,6 +396,17 @@ class Core {
                 list.addAll(((LainList) arg).getValue());
             }
             return new LainList(list);
+        }
+    };
+
+    private static LainFunction concatVec = new LainFunction("concat-vec") {
+        @Override
+        public LainObj apply(LainList args) throws LainException {
+            List<LainObj> list = new ArrayList<>();
+            for (LainObj arg : args.getValue()) {
+                list.addAll(((LainList) arg).getValue());
+            }
+            return new LainVector(list);
         }
     };
 
@@ -421,6 +442,8 @@ class Core {
         put(swapAtom);
         put(cons);
         put(concat);
+        put(concatVec);
+        put(consVec);
     }
 
     private static void put(LainObj func) {

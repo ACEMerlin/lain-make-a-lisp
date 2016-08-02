@@ -451,6 +451,12 @@ public class Types {
             start = '[';
             end = ']';
         }
+
+        public LainVector(List<LainObj> list) {
+            super(list);
+            start = '[';
+            end = ']';
+        }
     }
 
     public static class LainHashMap extends LainObj {
