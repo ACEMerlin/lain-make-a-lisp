@@ -16,7 +16,7 @@ class Env {
 
     Env(Map env) {
         inner = new HashMap();
-        env.forEach(inner::putIfAbsent);
+        inner.putAll(env);
     }
 
     Env(Env outer) {
@@ -38,7 +38,7 @@ class Env {
         }
     }
 
-    public Map getInner() {
+    private Map getInner() {
         return inner;
     }
 
@@ -47,7 +47,7 @@ class Env {
         return this;
     }
 
-    Env find(LainSymbol key) {
+    private Env find(LainSymbol key) {
         if (inner.containsKey(key.getValue())) {
             return this;
         } else if (outer != null) {

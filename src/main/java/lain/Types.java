@@ -1,6 +1,7 @@
 package lain;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 
@@ -363,33 +364,27 @@ public class Types {
 
         @Override
         public String toString() {
-            StringJoiner sj = new StringJoiner(" ",
-                    String.valueOf(start),
-                    String.valueOf(end));
+            List<String> sj = new ArrayList<>();
             for (LainObj name : value) {
                 sj.add(name.toString());
             }
-            return sj.toString();
+            return start + StringUtils.join(sj, " ") + end;
         }
 
         @Override
         public String toString(boolean readable) {
             if (readable) {
-                StringJoiner sj = new StringJoiner(" ",
-                        String.valueOf(start),
-                        String.valueOf(end));
+                List<String> sj = new ArrayList<>();
                 for (LainObj name : value) {
-                    sj.add(name.toString(readable));
+                    sj.add(name.toString(true));
                 }
-                return sj.toString();
+                return start + StringUtils.join(sj, " ") + end;
             } else {
-                StringJoiner sj = new StringJoiner(" ",
-                        String.valueOf(start),
-                        String.valueOf(end));
+                List<String> sj = new ArrayList<>();
                 for (LainObj name : value) {
-                    sj.add(StringEscapeUtils.unescapeJson(name.toString(readable)));
+                    sj.add(StringEscapeUtils.unescapeJson(name.toString(false)));
                 }
-                return sj.toString();
+                return start + StringUtils.join(sj, " ") + end;
             }
         }
 
@@ -484,34 +479,30 @@ public class Types {
 
         @Override
         public String toString() {
-            StringJoiner sj = new StringJoiner(" ", "{", "}");
-            value.forEach((k, v) -> {
-                sj.add(k.toString());
-                sj.add(v.toString());
-            });
-            return sj.toString();
+            List<String> sj = new ArrayList<>();
+            for (Map.Entry<LainAtom, LainObj> entry : value.entrySet()) {
+                sj.add(entry.getKey().toString());
+                sj.add(entry.getValue().toString());
+            }
+            return "{" + StringUtils.join(sj, " ") + "}";
         }
 
         @Override
         public String toString(boolean readable) {
             if (readable) {
-                StringJoiner sj = new StringJoiner(" ",
-                        String.valueOf("{"),
-                        String.valueOf("}"));
-                value.forEach((k, v) -> {
-                    sj.add(k.toString(readable));
-                    sj.add(v.toString(readable));
-                });
-                return sj.toString();
+                List<String> sj = new ArrayList<>();
+                for (Map.Entry<LainAtom, LainObj> entry : value.entrySet()) {
+                    sj.add(entry.getKey().toString(true));
+                    sj.add(entry.getValue().toString(true));
+                }
+                return "{" + StringUtils.join(sj, " ") + "}";
             } else {
-                StringJoiner sj = new StringJoiner(" ",
-                        String.valueOf("{"),
-                        String.valueOf("}"));
-                value.forEach((k, v) -> {
-                    sj.add(StringEscapeUtils.unescapeJson(k.toString(readable)));
-                    sj.add(StringEscapeUtils.unescapeJson(v.toString(readable)));
-                });
-                return sj.toString();
+                List<String> sj = new ArrayList<>();
+                for (Map.Entry<LainAtom, LainObj> entry : value.entrySet()) {
+                    sj.add(StringEscapeUtils.unescapeJson(entry.getKey().toString(false)));
+                    sj.add(StringEscapeUtils.unescapeJson(entry.getValue().toString(false)));
+                }
+                return "{" + StringUtils.join(sj, " ") + "}";
             }
         }
 

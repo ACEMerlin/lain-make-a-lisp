@@ -1,6 +1,7 @@
 package lain;
 
 import lain.Types.*;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,15 +20,25 @@ class Core {
             if (args.size() == 0) {
                 return new LainInteger(0);
             } else {
-                if (args.getValue().stream()
-                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
-                    return args.getValue().stream()
-                            .map(e -> (LainInteger) e)
-                            .reduce(new LainInteger(0), LainInteger::add);
+                boolean allInt = true;
+                List<LainObj> list = args.getValue();
+                for (LainObj arg : list) {
+                    if (!LainInteger.class.isAssignableFrom(arg.getClass())) {
+                        allInt = false;
+                    }
+                }
+                if (allInt) {
+                    int ret = 0;
+                    for (LainObj arg : list) {
+                        ret = ret + ((LainInteger) arg).intValue();
+                    }
+                    return new LainInteger(ret);
                 } else {
-                    return new LainDecimal(args.getValue().stream()
-                            .map(e -> ((LainNumber) e).doubleValue())
-                            .reduce(0.0, Double::sum));
+                    double ret = 0d;
+                    for (LainObj arg : list) {
+                        ret = ret + ((LainNumber) arg).doubleValue();
+                    }
+                    return new LainDecimal(ret);
                 }
             }
         }
@@ -39,8 +50,7 @@ class Core {
             if (args.size() == 0) {
                 throw new LainException("wrong number of parameters to '-' function");
             } else if (args.size() == 1) {
-                if (args.getValue().stream()
-                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
+                if (LainInteger.class.isAssignableFrom(args.get(0).getClass())) {
                     int first = ((LainInteger) args.get(0)).intValue();
                     return new LainInteger(-first);
                 } else {
@@ -48,17 +58,25 @@ class Core {
                     return new LainDecimal(first);
                 }
             } else {
-                if (args.getValue().stream()
-                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
-                    LainInteger first = ((LainInteger) args.get(0));
-                    return (args.sub(1)).getValue().stream()
-                            .map(e -> (LainInteger) e)
-                            .reduce(first, LainInteger::minus);
+                boolean allInt = true;
+                List<LainObj> list = args.getValue();
+                for (LainObj arg : list) {
+                    if (!LainInteger.class.isAssignableFrom(arg.getClass())) {
+                        allInt = false;
+                    }
+                }
+                if (allInt) {
+                    int ret = ((LainInteger) args.get(0)).getValue();
+                    for (LainObj arg : list.subList(1, list.size())) {
+                        ret = ret - ((LainInteger) arg).intValue();
+                    }
+                    return new LainInteger(ret);
                 } else {
-                    double first = ((LainDecimal) args.get(0)).doubleValue();
-                    return new LainDecimal(first - (args.sub(1)).getValue().stream()
-                            .map(e -> ((LainNumber) e).doubleValue())
-                            .reduce(0.0, Double::sum));
+                    double ret = ((LainDecimal) args.get(0)).doubleValue();
+                    for (LainObj arg : list.subList(1, list.size())) {
+                        ret = ret - ((LainNumber) arg).doubleValue();
+                    }
+                    return new LainDecimal(ret);
                 }
             }
         }
@@ -70,15 +88,25 @@ class Core {
             if (args.size() == 0) {
                 return new LainInteger(1);
             } else {
-                if (args.getValue().stream()
-                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
-                    return args.getValue().stream()
-                            .map(e -> (LainInteger) e)
-                            .reduce(new LainInteger(1), LainInteger::times);
+                boolean allInt = true;
+                List<LainObj> list = args.getValue();
+                for (LainObj arg : list) {
+                    if (!LainInteger.class.isAssignableFrom(arg.getClass())) {
+                        allInt = false;
+                    }
+                }
+                if (allInt) {
+                    int ret = 1;
+                    for (LainObj arg : list) {
+                        ret = ret * ((LainInteger) arg).intValue();
+                    }
+                    return new LainInteger(ret);
                 } else {
-                    return new LainDecimal(args.getValue().stream()
-                            .map(e -> ((LainNumber) e).doubleValue())
-                            .reduce(1.0, Double::sum));
+                    double ret = 1d;
+                    for (LainObj arg : list) {
+                        ret = ret * ((LainNumber) arg).doubleValue();
+                    }
+                    return new LainDecimal(ret);
                 }
             }
         }
@@ -93,20 +121,26 @@ class Core {
                 double first = ((LainNumber) args.get(0)).doubleValue();
                 return new LainDecimal(1 / first);
             } else {
-                if (args.getValue().stream()
-                        .allMatch(p -> LainInteger.class.isAssignableFrom(p.getClass()))) {
+                boolean allInt = true;
+                List<LainObj> list = args.getValue();
+                for (LainObj arg : list) {
+                    if (!LainInteger.class.isAssignableFrom(arg.getClass())) {
+                        allInt = false;
+                    }
+                }
+                if (allInt) {
                     LainInteger first = ((LainInteger) args.get(0));
                     int ret = first.intValue();
-                    List<LainObj> list = args.sub(1).getValue();
-                    for (LainObj aList : list) {
+                    List<LainObj> sublist = args.sub(1).getValue();
+                    for (LainObj aList : sublist) {
                         ret = ret / ((LainInteger) aList).intValue();
                     }
                     return new LainInteger(ret);
                 } else {
                     LainNumber first = ((LainNumber) args.get(0));
                     double ret = first.doubleValue();
-                    List<LainObj> list = (args.sub(1)).getValue();
-                    for (LainObj aList : list) {
+                    List<LainObj> sublist = (args.sub(1)).getValue();
+                    for (LainObj aList : sublist) {
                         ret = ret / ((LainNumber) aList).doubleValue();
                     }
                     return new LainDecimal(ret);
@@ -211,11 +245,11 @@ class Core {
     private static LainFunction prn = new LainFunction("prn") {
         @Override
         public LainObj apply(LainList args) throws LainException {
-            StringJoiner sj = new StringJoiner(" ", "", "");
+            List<String> sj = new ArrayList<>();
             for (LainObj arg : args.getValue()) {
                 sj.add(Printer.printStr(arg, true));
             }
-            System.out.print(sj.toString() + "\n");
+            System.out.print(StringUtils.join(sj, " ") + "\n");
             return Nil;
         }
     };
@@ -223,33 +257,33 @@ class Core {
     private static LainFunction prStr = new LainFunction("pr-str") {
         @Override
         public LainObj apply(LainList args) throws LainException {
-            StringJoiner sj = new StringJoiner(" ", "", "");
+            List<String> sj = new ArrayList<>();
             for (LainObj arg : args.getValue()) {
                 sj.add(Printer.printStr(arg, true));
             }
-            return new LainString(sj.toString());
+            return new LainString(StringUtils.join(sj, " "));
         }
     };
 
     private static LainFunction str = new LainFunction("str") {
         @Override
         public LainObj apply(LainList args) throws LainException {
-            StringJoiner sj = new StringJoiner("", "", "");
+            List<String> sj = new ArrayList<>();
             for (LainObj arg : args.getValue()) {
                 sj.add(Printer.printStr(arg, false));
             }
-            return new LainString(sj.toString());
+            return new LainString(StringUtils.join(sj, ""));
         }
     };
 
     private static LainFunction println = new LainFunction("println") {
         @Override
         public LainObj apply(LainList args) throws LainException {
-            StringJoiner sj = new StringJoiner(" ", "", "");
+            List<String> sj = new ArrayList<>();
             for (LainObj arg : args.getValue()) {
                 sj.add(Printer.printStr(arg, false));
             }
-            System.out.print(sj.toString() + "\n");
+            System.out.print(StringUtils.join(sj, " ") + "\n");
             return Nil;
         }
     };

@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 /**
  * Created by merlin on 16/7/26.
@@ -24,7 +23,7 @@ class ReadLine {
         HISTORY_FILE = System.getProperty("user.home") + "/.lain-history";
     }
 
-    public static class EOFException extends Exception {
+    static class EOFException extends Exception {
     }
 
     interface RLLibrary extends Library {
@@ -43,12 +42,13 @@ class ReadLine {
         void add_history(String line);
     }
 
-    private static void loadHistory(String filename) {
+    private static void loadHistory(String filename) throws Types.LainException {
         try {
-            Files.lines(Paths.get(filename), StandardCharsets.UTF_8)
-                    .collect(Collectors.toList())
-                    .forEach(RLLibrary.INSTANCE::add_history);
-        } catch (IOException ignored) {
+            for (String line : Files.readAllLines(Paths.get(filename), StandardCharsets.UTF_8)) {
+                RLLibrary.INSTANCE.add_history(line);
+            }
+        } catch (IOException e) {
+            throw new Types.LainException("error reading " + filename);
         }
     }
 
@@ -73,7 +73,7 @@ class ReadLine {
     }
 
     public static String jnaReadLine(String prompt)
-            throws EOFException, IOException {
+            throws EOFException, IOException, Types.LainException {
         if (!historyLoaded) {
             loadHistory(HISTORY_FILE);
         }
