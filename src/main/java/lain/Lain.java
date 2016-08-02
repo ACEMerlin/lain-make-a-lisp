@@ -151,6 +151,10 @@ public class Lain {
      * (quasiquote (1 (splice-unquote lst))) -> (1 2 3)
      */
     private static LainObj quasiquote(LainObj ast) {
+        boolean isVec = false;
+        if (LainVector.class.isAssignableFrom(ast.getClass())) {
+            isVec = true;
+        }
         if (!isPair(ast)) {
             return new LainList(new LainSymbol("quote"), ast);
         } else {
@@ -162,14 +166,26 @@ public class Lain {
                 LainObj a00 = ((LainList) a0).get(0);
                 if ((a00 instanceof LainSymbol) &&
                         (((LainSymbol) a00).getValue().equals("splice-unquote"))) {
-                    return new LainList(new LainSymbol("concat"),
-                            ((LainList) a0).get(1),
-                            quasiquote(((LainList) ast).rest()));
+                    if (!isVec) {
+                        return new LainList(new LainSymbol("concat"),
+                                ((LainList) a0).get(1),
+                                quasiquote(((LainList) ast).rest()));
+                    } else {
+                        return new LainList(new LainSymbol("concat-vec"),
+                                ((LainList) a0).get(1),
+                                quasiquote(((LainList) ast).rest()));
+                    }
                 }
             }
-            return new LainList(new LainSymbol("cons"),
-                    quasiquote(a0),
-                    quasiquote(((LainList) ast).rest()));
+            if (!isVec) {
+                return new LainList(new LainSymbol("cons"),
+                        quasiquote(a0),
+                        quasiquote(((LainList) ast).rest()));
+            } else {
+                return new LainList(new LainSymbol("cons-vec"),
+                        quasiquote(a0),
+                        quasiquote(((LainList) ast).rest()));
+            }
         }
     }
 
