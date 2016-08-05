@@ -1,0 +1,98 @@
+(def! *host-language* "java")
+
+(def! *gensym-counter* (atom 0))
+(def! gensym (lambda [] (symbol (str "G__" (swap! *gensym-counter* (lambda [x] (+ 1 x)))))))
+
+(def! inc (lambda (a) (+ a 1)))
+
+(def! dec (lambda (a) (- a 1)))
+
+(def! zero? (lambda (n) (= 0 n)))
+
+(def! reduce
+  (lambda (f init xs)
+    (if (> (count xs) 0)
+      (reduce f (f init (first xs)) (rest xs))
+      init)))
+
+(def! identity (lambda (x) x))
+
+(def! every?
+  (lambda (pred xs)
+    (if (> (count xs) 0)
+      (if (pred (first xs))
+        (every? pred (rest xs))
+        false)
+      true)))
+
+(def! not (lambda (x) (if x false true)))
+
+(def! some
+  (lambda (pred xs)
+    (if (> (count xs) 0)
+      (let (res (pred (first xs)))
+        (if (pred (first xs))
+          res
+          (some pred (rest xs))))
+      nil)))
+
+(defmacro! and
+  (lambda (& xs)
+    (if (empty? xs)
+      true
+      (if (= 1 (count xs))
+        (first xs)
+        (let (condvar (gensym))
+          `(let (~condvar ~(first xs))
+            (if ~condvar (and ~@(rest xs)) ~condvar)))))))
+
+(defmacro! or
+  (lambda (& xs)
+    (if (empty? xs)
+      nil
+      (if (= 1 (count xs))
+        (first xs)
+        (let (condvar (gensym))
+          `(let (~condvar ~(first xs))
+             (if ~condvar ~condvar (or ~@(rest xs)))))))))
+
+(defmacro! cond
+  (lambda (& clauses)
+    (if (> (count clauses) 0)
+      (list 'if (first clauses)
+            (if (> (count clauses) 1)
+                (nth clauses 1)
+                (throw "cond requires an even number of forms"))
+            (cons 'cond (rest (rest clauses)))))))
+
+(defmacro! ->
+  (lambda (x & xs)
+    (if (empty? xs)
+      x
+      (let (form (first xs)
+             more (rest xs))
+        (if (empty? more)
+          (if (list? form)
+            `(~(first form) ~x ~@(rest form))
+            (list form x))
+          `(-> (-> ~x ~form) ~@more))))))
+
+(defmacro! ->>
+  (lambda (x & xs)
+    (if (empty? xs)
+      x
+      (let (form (first xs)
+             more (rest xs))
+        (if (empty? more)
+          (if (list? form)
+            `(~(first form) ~@(rest form) ~x)
+            (list form x))
+          `(->> (->> ~x ~form) ~@more))))))
+
+(defmacro! defun
+  (lambda (name args & body)
+    `(def! ~name (lambda [~@args] ~@body))))
+
+(defmacro! defmacro
+  (lambda (name args & body)
+    `(defmacro! ~name (lambda [~@args] ~@body))))

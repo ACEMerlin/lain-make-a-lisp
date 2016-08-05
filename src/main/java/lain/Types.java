@@ -2,6 +2,7 @@ package lain;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.*;
 
@@ -270,6 +271,11 @@ public class Types {
                     && obj instanceof LainString
                     && this.value.equals(((LainString) obj).value);
         }
+
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder(17, 31).append(value).toHashCode();
+        }
     }
 
     public static class LainSymbol extends LainAtom {
@@ -300,6 +306,11 @@ public class Types {
                     && obj instanceof LainSymbol
                     && this.value.equals(((LainSymbol) obj).value);
         }
+
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder(17, 31).append(value).toHashCode();
+        }
     }
 
     public static class LainKeyword extends LainAtom {
@@ -326,6 +337,11 @@ public class Types {
                     && obj instanceof LainKeyword
                     && this.value.equals(((LainKeyword) obj).value);
         }
+
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder(17, 31).append(value).toHashCode();
+        }
     }
 
     public static LainSymbol Nil = new LainSymbol("nil");
@@ -343,13 +359,12 @@ public class Types {
         char end = ')';
 
         public LainList(LainObj... list) {
-            this.value = new ArrayList<LainObj>();
+            this.value = new ArrayList<>();
             accumulate(list);
         }
 
         public LainList(List<LainObj> list) {
-            this.value = new ArrayList<>(list);
-            accumulate(list);
+            this.value = list;
         }
 
         public void accumulate(LainObj... lainObj) {
@@ -357,9 +372,9 @@ public class Types {
                 Collections.addAll(value, lainObj);
         }
 
-        public void accumulate(List<LainObj> list) {
+        public void accumulate(Collection list) {
             if (list != null)
-                Collections.addAll(list);
+                value.addAll(list);
         }
 
         @Override
@@ -450,15 +465,44 @@ public class Types {
         }
     }
 
+
     public static class LainHashMap extends LainObj {
         private HashMap<LainAtom, LainObj> value;
 
-        public Set<Map.Entry<LainAtom, LainObj>> entries() {
+        public HashMap getValue() {
+            return value;
+        }
+
+        public Set entries() {
             return value.entrySet();
+        }
+
+        public LainObj keys() {
+            if (value.keySet().size() == 0) {
+                return Nil;
+            } else {
+                LainList list = new LainList();
+                list.accumulate(value.keySet());
+                return list;
+            }
+        }
+
+        public LainObj values() {
+            if (value.values().size() == 0) {
+                return Nil;
+            } else {
+                LainList list = new LainList();
+                list.accumulate(value.values());
+                return list;
+            }
         }
 
         public void put(LainAtom atom, LainObj obj) {
             value.put(atom, obj);
+        }
+
+        public LainHashMap(HashMap<LainAtom, LainObj> value) {
+            this.value = value;
         }
 
         public LainHashMap(LainObj... obj) throws LainException {
@@ -467,10 +511,29 @@ public class Types {
 
         public LainHashMap(LainList list) throws LainException {
             value = new HashMap<LainAtom, LainObj>();
-            if ((list.value.size() & 1) == 0) {
-                for (int i = 0; i < list.value.size(); i = i + 2) {
-                    LainObj key = list.value.get(i);
-                    LainObj value = list.value.get(i + 1);
+            accumulate(list);
+        }
+
+        public LainObj get(LainAtom atom) {
+            if (!value.containsKey(atom)) {
+                return Nil;
+            }
+            return value.get(atom);
+        }
+
+        public LainObj contains(LainAtom atom) {
+            if (!value.containsKey(atom)) {
+                return False;
+            } else {
+                return True;
+            }
+        }
+
+        public void accumulate(LainList list) throws LainException {
+            if ((list.getValue().size() & 1) == 0) {
+                for (int i = 0; i < list.getValue().size(); i = i + 2) {
+                    LainObj key = list.getValue().get(i);
+                    LainObj value = list.getValue().get(i + 1);
                     if ((LainString.class.isAssignableFrom(key.getClass())) |
                             (LainKeyword.class.isAssignableFrom(key.getClass()))) {
                         this.value.put((LainAtom) key, value);
@@ -519,7 +582,7 @@ public class Types {
                     || value.size() != ((LainHashMap) obj).value.size()) {
                 return false;
             }
-            for (LainAtom key : value.keySet()) {
+            for (LainObj key : value.keySet()) {
                 if (!value.get(key).equals(((LainHashMap) obj).value.get(key))) {
                     return false;
                 }
@@ -529,8 +592,18 @@ public class Types {
     }
 
     public static class LainException extends Exception {
+        private LainObj value;
+
+        public LainException(LainObj value) {
+            this.value = value;
+        }
+
+        public LainObj getValue() {
+            return value;
+        }
+
         public LainException(String message) {
-            super(message);
+            this.value = new LainString(message);
         }
     }
 

@@ -3,6 +3,8 @@ package lain;
 import lain.Types.*;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Map;
 
 import static lain.Types.*;
@@ -79,7 +81,7 @@ public class Lain {
                     LainObj result = EVAL(a2, env);
                     env.set((LainSymbol) a1, result);
                     return result;
-                case "let*":
+                case "let":
                     Env newEnv = new Env(env);
                     LainList pairs = (LainList) a1;
                     for (int i = 0; i < pairs.size(); i = i + 2) {
@@ -138,6 +140,29 @@ public class Lain {
                     return marcoResult;
                 case "macroexpand":
                     return macroexpand(a1, env);
+                case "try":
+                    try {
+                        return EVAL(a1, env);
+                    } catch (Throwable t) {
+                        if (list.size() > 2) {
+                            LainObj exc;
+                            LainObj a20 = ((LainList) a2).get(0);
+                            if (((LainSymbol) a20).getValue().equals("catch")) {
+                                if (t instanceof LainException) {
+                                    exc = ((LainException) t).getValue();
+                                } else {
+                                    StringWriter sw = new StringWriter();
+                                    t.printStackTrace(new PrintWriter(sw));
+                                    String tstr = sw.toString();
+                                    exc = new LainString(t.getMessage() + ": " + tstr);
+                                }
+                                return EVAL(((LainList) a2).get(2),
+                                        new Env(env, ((LainList) a2).sub(1, 2),
+                                                new LainList(exc)));
+                            }
+                        }
+                        throw t;
+                    }
                 default:
                     LainList evalResult = (LainList) evalAst(list, env);
                     LainFunction caller = (LainFunction) evalResult.get(0);
@@ -245,14 +270,13 @@ public class Lain {
             lainArgs.accumulate(new LainString(arg));
         }
         env.set(new LainSymbol("*ARGV*"), lainArgs);
-        RE(env, "(def! not (lambda (a) (if a false true)))");
         RE(env, "(def! load-file (lambda (f) (eval (read-string (str \"(do \" (slurp f) \")\")))))");
-        RE(env, "(defmacro! cond (lambda (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))");
-        RE(env, "(defmacro! or (lambda (& xs) (if (empty? xs) nil (if (= 1 (count xs)) (first xs) `(let* (or_FIXME ~(first xs)) (if or_FIXME or_FIXME (or ~@(rest xs))))))))");
         if (args.length > 0) {
             RE(env, "(load-file \"" + args[0] + "\")");
             return;
         }
+        RE(env, "(def! *host-language* \"java\")");
+        RE(env, "(println (str \"Mal [\" *host-language* \"]\"))");
         while (true) {
             String line;
             try {
@@ -265,7 +289,7 @@ public class Lain {
             } catch (IOException | ReadLine.EOFException e) {
                 break;
             } catch (LainException e) {
-                e.printStackTrace();
+                System.out.println("Error: " + Printer.printStr(e.getValue(), false));
             }
         }
     }

@@ -1,0 +1,3 @@
+;; core
+(load-file "lain/core.lain")
+(load-file "lain/perf.lain")
